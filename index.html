@@ -2,12 +2,14 @@
 <html lang="pt-br">
 <head>
   <meta charset="utf-8" />
-  <title>Mapa de Certificação RTRS</title>
+  <title>PoliSoy v1.0</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <style>
     html, body { margin: 0; padding: 0; height: 100%; font-family: sans-serif; }
     #map { width: 100%; height: 100vh; }
+
+    /* Search container */
     #search-container {
       position: absolute;
       top: 10px;
@@ -18,16 +20,26 @@
       border-radius: 6px;
       box-shadow: 0 2px 6px rgba(0,0,0,0.2);
     }
+
     #city-search {
-      width: 200px;
+      width: 220px;
       padding: 5px;
       font-size: 14px;
+    }
+
+    /* Move zoom buttons to bottom right */
+    .leaflet-control-zoom {
+      top: auto !important;
+      bottom: 10px !important;
+      right: 10px !important;
+      left: auto !important;
     }
   </style>
 </head>
 <body>
   <div id="search-container">
-    <input type="text" id="city-search" placeholder="Digite o nome da cidade" />
+    <input type="text" id="city-search" placeholder="Digite o nome da cidade" list="city-list" />
+    <datalist id="city-list"></datalist>
   </div>
   <div id="map"></div>
 
@@ -42,6 +54,7 @@
     }).addTo(map);
 
     let geojsonLayer;
+    const datalist = document.getElementById('city-list');
 
     fetch('muni_map.geojson')
       .then(response => response.json())
@@ -49,15 +62,23 @@
         geojsonLayer = L.geoJSON(data, {
           onEachFeature: function (feature, layer) {
             const p = feature.properties;
+            const cityName = p.name_muni?.trim();
             const popup = `
-              <b>${p.name_muni}</b><br>
+              <b>${cityName}</b><br>
               Certificados RTRS: ${p.CertifiedProducers || 0}<br>
               Doações: R$${p.TotalDonation || 0}<br>
               Destinatários: ${p.Recipients || "Nenhum"}<br>
               Partidos: ${p.RecipientParties || "Nenhum"}
             `;
             layer.bindPopup(popup);
-            layer._cityName = p.name_muni.toLowerCase(); // store for search
+            layer._cityName = cityName?.toLowerCase(); // store for search
+
+            // Add to datalist if valid
+            if (cityName) {
+              const option = document.createElement("option");
+              option.value = cityName;
+              datalist.appendChild(option);
+            }
           },
           style: function (feature) {
             let val = feature.properties.CertifiedProducers;
@@ -74,14 +95,14 @@
         }).addTo(map);
       });
 
-    // Search box logic
+    // Busca e zoom
     document.getElementById('city-search').addEventListener('change', function () {
       const input = this.value.trim().toLowerCase();
       if (!input || !geojsonLayer) return;
 
       let found = false;
       geojsonLayer.eachLayer(function (layer) {
-        if (layer._cityName && layer._cityName.includes(input)) {
+        if (layer._cityName && layer._cityName === input) {
           const bounds = layer.getBounds();
           map.fitBounds(bounds);
           layer.openPopup();

@@ -1,9 +1,3 @@
-Criar o HTML do mapa interativo
-Aqui está o código index.html que você pode salvar como um arquivo:
-
-html
-Copiar
-Editar
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
@@ -23,11 +17,15 @@ Editar
   <script>
     var map = L.map('map').setView([-15, -55], 4); // vista inicial no Brasil
 
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      attribution: '&copy; OpenStreetMap contributors'
+    // Tile leve, sem áreas verdes
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/">CARTO</a>',
+      subdomains: 'abcd',
+      maxZoom: 19
     }).addTo(map);
 
-    fetch('muni_map.geojson') // deve estar na mesma pasta do HTML
+    // Carregamento do GeoJSON
+    fetch('muni_map.geojson')
       .then(response => response.json())
       .then(data => {
         L.geoJSON(data, {

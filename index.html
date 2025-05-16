@@ -6,32 +6,50 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <style>
-    html, body { margin: 0; padding: 0; height: 100%; }
+    html, body { margin: 0; padding: 0; height: 100%; font-family: sans-serif; }
     #map { width: 100%; height: 100vh; }
+    #search-container {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      z-index: 1000;
+      background: white;
+      padding: 10px;
+      border-radius: 6px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+    }
+    #city-search {
+      width: 200px;
+      padding: 5px;
+      font-size: 14px;
+    }
   </style>
 </head>
 <body>
+  <div id="search-container">
+    <input type="text" id="city-search" placeholder="Digite o nome da cidade" />
+  </div>
   <div id="map"></div>
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script>
-    var map = L.map('map').setView([-15, -55], 4); // vista inicial no Brasil
+    const map = L.map('map').setView([-15, -55], 4);
 
-    // Tile leve, sem áreas verdes
     L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
-      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/">CARTO</a>',
+      attribution: '&copy; OpenStreetMap & CARTO',
       subdomains: 'abcd',
       maxZoom: 19
     }).addTo(map);
 
-    // Carregamento do GeoJSON
+    let geojsonLayer;
+
     fetch('muni_map.geojson')
       .then(response => response.json())
       .then(data => {
-        L.geoJSON(data, {
+        geojsonLayer = L.geoJSON(data, {
           onEachFeature: function (feature, layer) {
-            var p = feature.properties;
-            var popup = `
+            const p = feature.properties;
+            const popup = `
               <b>${p.name_muni}</b><br>
               Certificados RTRS: ${p.CertifiedProducers || 0}<br>
               Doações: R$${p.TotalDonation || 0}<br>
@@ -39,6 +57,7 @@
               Partidos: ${p.RecipientParties || "Nenhum"}
             `;
             layer.bindPopup(popup);
+            layer._cityName = p.name_muni.toLowerCase(); // store for search
           },
           style: function (feature) {
             let val = feature.properties.CertifiedProducers;
@@ -54,6 +73,26 @@
           }
         }).addTo(map);
       });
+
+    // Search box logic
+    document.getElementById('city-search').addEventListener('change', function () {
+      const input = this.value.trim().toLowerCase();
+      if (!input || !geojsonLayer) return;
+
+      let found = false;
+      geojsonLayer.eachLayer(function (layer) {
+        if (layer._cityName && layer._cityName.includes(input)) {
+          const bounds = layer.getBounds();
+          map.fitBounds(bounds);
+          layer.openPopup();
+          found = true;
+        }
+      });
+
+      if (!found) {
+        alert("Cidade não encontrada. Verifique o nome.");
+      }
+    });
   </script>
 </body>
 </html>

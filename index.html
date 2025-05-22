@@ -27,15 +27,8 @@
     }
 
     #study-link {
-      position: absolute;
-      bottom: 10px;
-      right: 10px;
-      z-index: 1000;
-      background: white;
-      padding: 8px 12px;
-      border-radius: 6px;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.2);
-      font-size: 14px;
+      margin-top: 8px;
+      font-size: 13px;
     }
 
     #study-link a {
@@ -52,15 +45,14 @@
   <div id="search-container">
     <input type="text" id="city-search" placeholder="Type the name of the city" list="city-list" />
     <datalist id="city-list"></datalist>
+    <div id="study-link">
+      <a href="https://papers.ssrn.com/sol3/papers.cfm?abstract_id=5262465" target="_blank">
+        Checkout our study using PoliSoy
+      </a>
+    </div>
   </div>
 
   <div id="map"></div>
-
-  <div id="study-link">
-    <a href="https://papers.ssrn.com/sol3/papers.cfm?abstract_id=5262465" target="_blank">
-      Checkout our study using PoliSoy
-    </a>
-  </div>
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script>

@@ -49,26 +49,57 @@
     #city-search {
       margin-bottom: 8px;
     }
+
+    #explore-container {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      z-index: 1000;
+      background: white;
+      padding: 12px;
+      border-radius: 6px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+      font-size: 13px;
+      width: 240px;
+    }
+
+    #explore-container h4 {
+      margin: 0 0 8px;
+      font-size: 14px;
+    }
+
+    #explore-container input[type="text"] {
+      width: 100%;
+      padding: 6px;
+      font-size: 13px;
+      margin-bottom: 8px;
+    }
+
+    .leaflet-control-layers {
+      display: none !important; /* hide default control */
+    }
   </style>
 </head>
 <body>
   <div id="search-container">
     <h3>About PoliSoy</h3>
     <p>
-  <strong>PoliSoy</strong> (Political Accountability of Soy Business Owners) tracks the political engagement of key asset owners in Brazil’s soy industry, with particular attention to actors certified under sustainability schemes such as RTRS (Roundtable on Responsible Soy). The platform was developed by Rodrigo Fagundes Cezar (<a href="mailto:rodrigo.cezar@fgv.br">rodrigo.cezar@fgv.br</a>) at FGV by linking public data on RTRS audits, corporate ownership records, and campaign donation disclosures from Brazil’s 2022 elections.
-</p>
-<p>
-  This is a <strong>beta version</strong>, focused initially on RTRS-certified actors and the 2022 electoral cycle. Future iterations will expand coverage to additional sustainability standards, commodity sectors, and election years, offering a broader view of how sustainability-linked firms engage in politics.
-</p>
-<p>
-  <a href="https://papers.ssrn.com/sol3/papers.cfm?abstract_id=5262465" target="_blank">
-    Check out our paper
-  </a>
-  &nbsp;for details on the data construction process, limitations, and an empirical application.
-</p>
+      <strong>PoliSoy</strong> (Political Accountability of Soy Business Owners) tracks the political engagement of key asset owners in Brazil’s soy industry, with particular attention to actors certified under sustainability schemes such as RTRS (Roundtable on Responsible Soy). The platform was developed by Rodrigo Fagundes Cezar (<a href="mailto:rodrigo.cezar@fgv.br">rodrigo.cezar@fgv.br</a>) at FGV by linking public data on RTRS audits, corporate ownership records, and campaign donation disclosures from Brazil’s 2022 elections.
+    </p>
+    <p>
+      This is a <strong>beta version</strong>, focused initially on RTRS-certified actors and the 2022 electoral cycle. Future iterations will expand coverage to additional sustainability standards, commodity sectors, and election years, offering a broader view of how sustainability-linked firms engage in politics.
+    </p>
+    <p>
+      <a href="https://papers.ssrn.com/sol3/papers.cfm?abstract_id=5262465" target="_blank">
+        Check out our paper</a> for details on the data construction process, limitations, and an empirical application.
+    </p>
+  </div>
 
+  <div id="explore-container">
+    <h4>Explore the data</h4>
     <input type="text" id="city-search" placeholder="Type a city name" list="city-list" />
     <datalist id="city-list"></datalist>
+    <div id="layer-toggles"></div>
   </div>
 
   <div id="map"></div>
@@ -86,6 +117,7 @@
 
     const datalist = document.getElementById('city-list');
     const searchInput = document.getElementById('city-search');
+    const toggleContainer = document.getElementById('layer-toggles');
     let activeLayer = null;
 
     function getColor(value) {
@@ -171,18 +203,42 @@
           }
         });
 
-        const baseMaps = {
-          "All soy shareholders": layerAll,
-          "RTRS audited shareholders": layerRTRS
-        };
-
-        L.control.layers(baseMaps, null, { collapsed: false }).addTo(map);
+        // Adiciona camada padrão
         layerAll.addTo(map);
         activeLayer = layerAll;
 
-        map.on('baselayerchange', function(e) {
-          activeLayer = e.layer;
+        // Cria caixas de seleção personalizadas
+        const checkboxAll = document.createElement("input");
+        checkboxAll.type = "radio";
+        checkboxAll.name = "layer-toggle";
+        checkboxAll.checked = true;
+        checkboxAll.id = "allLayer";
+        checkboxAll.addEventListener("change", () => {
+          map.removeLayer(layerRTRS);
+          map.addLayer(layerAll);
+          activeLayer = layerAll;
         });
+
+        const labelAll = document.createElement("label");
+        labelAll.htmlFor = "allLayer";
+        labelAll.innerText = "All soy shareholders";
+
+        const checkboxRTRS = document.createElement("input");
+        checkboxRTRS.type = "radio";
+        checkboxRTRS.name = "layer-toggle";
+        checkboxRTRS.id = "rtrsLayer";
+        checkboxRTRS.addEventListener("change", () => {
+          map.removeLayer(layerAll);
+          map.addLayer(layerRTRS);
+          activeLayer = layerRTRS;
+        });
+
+        const labelRTRS = document.createElement("label");
+        labelRTRS.htmlFor = "rtrsLayer";
+        labelRTRS.innerText = "RTRS audited shareholders";
+
+        [checkboxAll, labelAll, document.createElement("br"),
+         checkboxRTRS, labelRTRS].forEach(el => toggleContainer.appendChild(el));
       });
 
     searchInput.addEventListener('change', function () {

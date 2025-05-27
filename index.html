@@ -81,11 +81,6 @@
       width: 100%;
     }
 
-    /* Show leaflet default control as normal (don't hide it) */
-    .leaflet-top.leaflet-right {
-      display: block !important;
-    }
-
     a {
       color: #0077cc;
       text-decoration: none;
@@ -218,7 +213,7 @@
           "RTRS audited shareholders": layerRTRS
         };
 
-        // Always show the control in the custom container
+        // Render the layer control INSIDE the custom container
         const layerControl = L.control.layers(baseMaps, null, { collapsed: false });
         setTimeout(() => {
           const container = layerControl.onAdd(map);

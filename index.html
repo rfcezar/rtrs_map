@@ -74,9 +74,9 @@
 
     const datalist = document.getElementById('city-list');
     const searchInput = document.getElementById('city-search');
-    let allFeatures = [];
-    let layerAll = null;
-    let layerRTRS = null;
+    const layerAll = L.layerGroup();
+    const layerRTRS = L.layerGroup();
+    let activeLayer = layerAll;
 
     function getColor(value) {
       return value > 1000000 ? '#08306b' :
@@ -86,15 +86,14 @@
     }
 
     function createPopup(props, prefix) {
-      let parties = [];
-      try {
-        const raw = props[`${prefix}_TopParties`];
-        parties = typeof raw === 'string' ? JSON.parse(raw) : raw;
-      } catch (e) {
-        parties = [];
+      let parties = props[`${prefix}_TopParties`] || [];
+      if (typeof parties === "string") {
+        try { parties = JSON.parse(parties); } catch (e) { parties = []; }
       }
 
-      const list = parties.map(p => `<li>${p.name}: R$${p.value.toLocaleString()} (${p.percent}%)</li>`).join('');
+      const list = parties.length > 0
+        ? parties.map(p => `<li>${p.name}: R$${p.value.toLocaleString()} (${p.percent}%)</li>`).join('')
+        : "<li>No parties listed</li>";
 
       return `
         <b>${props.name_muni}</b><br>
@@ -106,60 +105,68 @@
     fetch('muni_map.geojson')
       .then(res => res.json())
       .then(data => {
+        const cities = new Set();
+
         data.features.forEach(f => {
           const props = f.properties;
           const name = props.name_muni?.trim();
-          f.properties._cityName = name?.toLowerCase();
+          const allVal = props.All_TotalDonated || 0;
+          const rtrsVal = props.RTRS_TotalDonated || 0;
 
-          if (name) {
+          const layer1 = L.geoJSON(f, {
+            style: { color: 'gray', weight: 0.5, fillColor: getColor(allVal), fillOpacity: 0.7 },
+            onEachFeature: (feature, layer) => {
+              layer._cityName = name?.toLowerCase();
+              layer.bindPopup(createPopup(props, 'All'));
+            }
+          });
+
+          const layer2 = L.geoJSON(f, {
+            style: { color: 'gray', weight: 0.5, fillColor: getColor(rtrsVal), fillOpacity: 0.7 },
+            onEachFeature: (feature, layer) => {
+              layer._cityName = name?.toLowerCase();
+              layer.bindPopup(createPopup(props, 'RTRS'));
+            }
+          });
+
+          layerAll.addLayer(layer1);
+          layerRTRS.addLayer(layer2);
+
+          if (name && !cities.has(name)) {
             const option = document.createElement("option");
             option.value = name;
             datalist.appendChild(option);
+            cities.add(name);
           }
         });
 
-        layerAll = L.geoJSON(data, {
-          style: f => ({ color: 'gray', weight: 0.5, fillColor: getColor(f.properties.All_TotalDonated || 0), fillOpacity: 0.7 }),
-          onEachFeature: (feature, layer) => {
-            layer._cityName = feature.properties._cityName;
-            layer.bindPopup(createPopup(feature.properties, 'All'));
+        activeLayer.addTo(map);
+
+        const layerControl = L.control.layers(null, null, { collapsed: false }).addTo(map);
+        layerControl.addOverlay(layerAll, "All shareholders");
+        layerControl.addOverlay(layerRTRS, "RTRS audited");
+
+        map.on('overlayadd', function(e) {
+          if (e.name === "All shareholders") {
+            map.removeLayer(layerRTRS);
+            activeLayer = layerAll;
+          } else {
+            map.removeLayer(layerAll);
+            activeLayer = layerRTRS;
           }
         });
-
-        layerRTRS = L.geoJSON(data, {
-          style: f => ({ color: 'gray', weight: 0.5, fillColor: getColor(f.properties.RTRS_TotalDonated || 0), fillOpacity: 0.7 }),
-          onEachFeature: (feature, layer) => {
-            layer._cityName = feature.properties._cityName;
-            layer.bindPopup(createPopup(feature.properties, 'RTRS'));
-          }
-        });
-
-        const baseLayers = {
-          "All shareholders": layerAll,
-          "RTRS audited": layerRTRS
-        };
-
-        layerAll.addTo(map);
-        L.control.layers(baseLayers, null, { collapsed: false }).addTo(map);
-        allFeatures = [layerAll, layerRTRS];
       });
 
     searchInput.addEventListener('change', function () {
       const input = this.value.trim().toLowerCase();
       if (!input) return;
 
-      let found = false;
-      allFeatures.forEach(group => {
-        group.eachLayer(layer => {
-          if (layer._cityName === input) {
-            map.fitBounds(layer.getBounds());
-            layer.openPopup();
-            found = true;
-          }
-        });
+      activeLayer.eachLayer(layer => {
+        if (layer._cityName === input) {
+          map.fitBounds(layer.getBounds());
+          layer.openPopup();
+        }
       });
-
-      if (!found) alert("City not found. Please check the spelling.");
     });
   </script>
 </body>

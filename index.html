@@ -74,9 +74,9 @@
 
     const datalist = document.getElementById('city-list');
     const searchInput = document.getElementById('city-search');
-    const layerAll = L.layerGroup();
-    const layerRTRS = L.layerGroup();
     let allFeatures = [];
+    let layerAll = null;
+    let layerRTRS = null;
 
     function getColor(value) {
       return value > 1000000 ? '#08306b' :
@@ -88,8 +88,11 @@
     function createPopup(props, prefix) {
       let parties = [];
       try {
-        parties = JSON.parse(props[`${prefix}_TopParties`] || '[]');
-      } catch (e) {}
+        const raw = props[`${prefix}_TopParties`];
+        parties = typeof raw === 'string' ? JSON.parse(raw) : raw;
+      } catch (e) {
+        parties = [];
+      }
 
       const list = parties.map(p => `<li>${p.name}: R$${p.value.toLocaleString()} (${p.percent}%)</li>`).join('');
 
@@ -106,36 +109,29 @@
         data.features.forEach(f => {
           const props = f.properties;
           const name = props.name_muni?.trim();
-          const allVal = props.All_TotalDonated || 0;
-          const rtrsVal = props.RTRS_TotalDonated || 0;
-
-          const featureAll = L.geoJSON(f, {
-            style: () => ({ color: 'gray', weight: 0.5, fillColor: getColor(allVal), fillOpacity: 0.7 }),
-            onEachFeature: (feature, layer) => {
-              layer._cityName = name?.toLowerCase();
-              layer.bindPopup(createPopup(feature.properties, 'All'));
-            }
-          });
-
-          const featureRTRS = L.geoJSON(f, {
-            style: () => ({ color: 'gray', weight: 0.5, fillColor: getColor(rtrsVal), fillOpacity: 0.7 }),
-            onEachFeature: (feature, layer) => {
-              layer._cityName = name?.toLowerCase();
-              layer.bindPopup(createPopup(feature.properties, 'RTRS'));
-            }
-          });
+          f.properties._cityName = name?.toLowerCase();
 
           if (name) {
             const option = document.createElement("option");
             option.value = name;
             datalist.appendChild(option);
           }
+        });
 
-          allFeatures.push(featureAll);
-          allFeatures.push(featureRTRS);
+        layerAll = L.geoJSON(data, {
+          style: f => ({ color: 'gray', weight: 0.5, fillColor: getColor(f.properties.All_TotalDonated || 0), fillOpacity: 0.7 }),
+          onEachFeature: (feature, layer) => {
+            layer._cityName = feature.properties._cityName;
+            layer.bindPopup(createPopup(feature.properties, 'All'));
+          }
+        });
 
-          layerAll.addLayer(featureAll);
-          layerRTRS.addLayer(featureRTRS);
+        layerRTRS = L.geoJSON(data, {
+          style: f => ({ color: 'gray', weight: 0.5, fillColor: getColor(f.properties.RTRS_TotalDonated || 0), fillOpacity: 0.7 }),
+          onEachFeature: (feature, layer) => {
+            layer._cityName = feature.properties._cityName;
+            layer.bindPopup(createPopup(feature.properties, 'RTRS'));
+          }
         });
 
         const baseLayers = {
@@ -145,6 +141,7 @@
 
         layerAll.addTo(map);
         L.control.layers(baseLayers, null, { collapsed: false }).addTo(map);
+        allFeatures = [layerAll, layerRTRS];
       });
 
     searchInput.addEventListener('change', function () {

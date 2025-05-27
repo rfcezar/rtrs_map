@@ -214,16 +214,16 @@
         };
 
         // Render the layer control INSIDE the custom container
-        const layerControl = L.control.layers(baseMaps, null, { collapsed: false });
-        setTimeout(() => {
-          const container = layerControl.onAdd(map);
-          container.style.position = 'static';
-          container.style.boxShadow = 'none';
-          container.style.background = 'none';
-          container.style.width = '100%';
-          container.style.fontSize = '12px';
-          document.getElementById('layers-container').appendChild(container);
-        }, 0);
+        map.whenReady(() => {
+  const layerControl = L.control.layers(baseMaps, null, { collapsed: false });
+  const container = layerControl.onAdd(map);
+  container.style.position = 'static';
+  container.style.boxShadow = 'none';
+  container.style.background = 'none';
+  container.style.width = '100%';
+  container.style.fontSize = '12px';
+  document.getElementById('layers-container').appendChild(container);
+});
 
         layerAll.addTo(map);
         activeLayer = layerAll;

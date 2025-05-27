@@ -82,7 +82,7 @@
       return value > 1000000 ? '#08306b' :
              value > 500000  ? '#2171b5' :
              value > 100000  ? '#6baed6' :
-             value > 0       ? '#c6dbef' : '#f0f0f0';
+             value > 0       ? '#c6dbef' : '#e0e0e0';
     }
 
     function createPopup(props, prefix) {
@@ -114,7 +114,12 @@
           const rtrsVal = props.RTRS_TotalDonated || 0;
 
           const layer1 = L.geoJSON(f, {
-            style: { color: 'gray', weight: 0.5, fillColor: getColor(allVal), fillOpacity: 0.7 },
+            style: {
+              color: 'gray',
+              weight: 0.5,
+              fillColor: getColor(allVal),
+              fillOpacity: 0.7
+            },
             onEachFeature: (feature, layer) => {
               layer._cityName = name?.toLowerCase();
               layer.bindPopup(createPopup(props, 'All'));
@@ -122,7 +127,12 @@
           });
 
           const layer2 = L.geoJSON(f, {
-            style: { color: 'gray', weight: 0.5, fillColor: getColor(rtrsVal), fillOpacity: 0.7 },
+            style: {
+              color: 'gray',
+              weight: 0.5,
+              fillColor: getColor(rtrsVal),
+              fillOpacity: 0.7
+            },
             onEachFeature: (feature, layer) => {
               layer._cityName = name?.toLowerCase();
               layer.bindPopup(createPopup(props, 'RTRS'));

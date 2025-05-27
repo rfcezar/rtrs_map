@@ -85,19 +85,28 @@
              value > 0       ? '#c6dbef' : '#e0e0e0';
     }
 
-    function createPopup(props, prefix) {
-      let parties = props[`${prefix}_TopParties`] || [];
-      if (typeof parties === "string") {
-        try { parties = JSON.parse(parties); } catch (e) { parties = []; }
+    function parseTopParties(raw) {
+      try {
+        return typeof raw === "string" ? JSON.parse(raw) : (Array.isArray(raw) ? raw : []);
+      } catch (_) {
+        return [];
       }
+    }
 
+    function createPopup(props, prefix) {
+      const parties = parseTopParties(props[`${prefix}_TopParties`]);
       const list = parties.length > 0
-        ? parties.map(p => `<li>${p.name}: R$${p.value.toLocaleString()} (${p.percent}%)</li>`).join('')
+        ? parties.map(p => `<li>${p.name}: R$${Number(p.value).toLocaleString()} (${p.percent}%)</li>`).join('')
         : "<li>No parties listed</li>";
+
+      const total = props[`${prefix}_TotalDonated`];
+      const formattedTotal = (typeof total === "number" && !isNaN(total))
+        ? `R$${total.toLocaleString()}`
+        : "R$0";
 
       return `
         <b>${props.name_muni}</b><br>
-        Total donated: R$${(props[`${prefix}_TotalDonated`] || 0).toLocaleString()}<br>
+        Total donated: ${formattedTotal}<br>
         <u>Top parties:</u><ul>${list}</ul>
       `;
     }
@@ -150,21 +159,10 @@
           }
         });
 
-        activeLayer.addTo(map);
-
+        layerAll.addTo(map);
         const layerControl = L.control.layers(null, null, { collapsed: false }).addTo(map);
         layerControl.addOverlay(layerAll, "All shareholders");
         layerControl.addOverlay(layerRTRS, "RTRS audited");
-
-        map.on('overlayadd', function(e) {
-          if (e.name === "All shareholders") {
-            map.removeLayer(layerRTRS);
-            activeLayer = layerAll;
-          } else {
-            map.removeLayer(layerAll);
-            activeLayer = layerRTRS;
-          }
-        });
       });
 
     searchInput.addEventListener('change', function () {

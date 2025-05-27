@@ -61,15 +61,6 @@
 
   <div id="map"></div>
 
-<<<<<<< HEAD
-  <div id="study-link">
-    <a href="https://papers.ssrn.com/sol3/papers.cfm?abstract_id=5262465" target="_blank">
-      Read our PoliSoy study
-    </a>
-  </div>
-
-=======
->>>>>>> 5f1b3b190ceae2e0dd66fa48a9ea1b80a75aa917
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script>
     const map = L.map('map', { zoomControl: false }).setView([-15, -55], 4);
@@ -119,16 +110,21 @@
           const allVal = props.All_TotalDonated || 0;
           const rtrsVal = props.RTRS_TotalDonated || 0;
 
-          const featureAll = L.geoJSON(f.geometry, {
-            style: { color: 'gray', weight: 0.5, fillColor: getColor(allVal), fillOpacity: 0.7 }
-          }).bindPopup(createPopup(props, 'All'));
+          const featureAll = L.geoJSON(f, {
+            style: () => ({ color: 'gray', weight: 0.5, fillColor: getColor(allVal), fillOpacity: 0.7 }),
+            onEachFeature: (feature, layer) => {
+              layer._cityName = name?.toLowerCase();
+              layer.bindPopup(createPopup(feature.properties, 'All'));
+            }
+          });
 
-          const featureRTRS = L.geoJSON(f.geometry, {
-            style: { color: 'gray', weight: 0.5, fillColor: getColor(rtrsVal), fillOpacity: 0.7 }
-          }).bindPopup(createPopup(props, 'RTRS'));
-
-          featureAll.eachLayer(l => l._cityName = name?.toLowerCase());
-          featureRTRS.eachLayer(l => l._cityName = name?.toLowerCase());
+          const featureRTRS = L.geoJSON(f, {
+            style: () => ({ color: 'gray', weight: 0.5, fillColor: getColor(rtrsVal), fillOpacity: 0.7 }),
+            onEachFeature: (feature, layer) => {
+              layer._cityName = name?.toLowerCase();
+              layer.bindPopup(createPopup(feature.properties, 'RTRS'));
+            }
+          });
 
           layerAll.addLayer(featureAll);
           layerRTRS.addLayer(featureRTRS);

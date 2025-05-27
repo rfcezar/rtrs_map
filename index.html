@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <title>PoliSoy Dashboard 11</title>
+  <title>PoliSoy Dashboard</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <style>
@@ -42,18 +42,11 @@
       right: 10px;
       z-index: 1000;
       background: white;
-      padding: 10px 12px;
+      padding: 8px 10px;
       border-radius: 6px;
       box-shadow: 0 2px 6px rgba(0,0,0,0.2);
-      width: 230px;
+      width: 220px;
       font-size: 13px;
-    }
-
-    #layer-control-container {
-      position: absolute;
-      top: 90px;
-      right: 10px;
-      z-index: 1000;
     }
 
     #search-container h3 {
@@ -65,6 +58,15 @@
       width: 100%;
       padding: 3px;
       font-size: 12px;
+    }
+
+    .leaflet-control-layers {
+      font-size: 11px !important;
+    }
+
+    .leaflet-control-layers-expanded {
+      padding: 4px 8px;
+      margin-top: 45px; /* desloca para baixo */
     }
 
     a {
@@ -79,7 +81,9 @@
 </head>
 <body>
   <div id="info-container">
-    <p><strong>About PoliSoy</strong></p>
+    <p>
+      <strong>About PoliSoy</strong>
+    </p>
     <p>
       <strong>PoliSoy</strong> (Political Accountability of Soy Business Owners) tracks the political engagement of key asset owners in Brazil’s soy industry, with particular attention to actors certified under sustainability schemes such as RTRS (Roundtable on Responsible Soy). The platform was developed by <a href="mailto:rodrigo.cezar@fgv.br">Rodrigo Fagundes Cezar</a> at FGV by linking public data on RTRS audits, corporate ownership records, and campaign donation disclosures from Brazil’s 2022 elections.
     </p>
@@ -93,8 +97,6 @@
     <input type="text" id="city-search" placeholder="Type a city name" list="city-list" />
     <datalist id="city-list"></datalist>
   </div>
-
-  <div id="layer-control-container"></div>
 
   <div id="map"></div>
 
@@ -201,16 +203,7 @@
           "RTRS audited shareholders": layerRTRS
         };
 
-        const container = document.getElementById('layer-control-container');
-        const layerControl = L.control.layers(baseMaps, null, { collapsed: false });
-        layerControl.onAdd = function () {
-          this._initLayout();
-          this._update();
-          return this._container;
-        };
-        layerControl.addTo(map);
-        container.appendChild(layerControl._container);
-
+        L.control.layers(baseMaps, null, { collapsed: false }).addTo(map);
         layerAll.addTo(map);
         activeLayer = layerAll;
 

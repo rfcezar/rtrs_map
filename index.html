@@ -27,24 +27,17 @@
       font-size: 14px;
     }
 
-    #study-link {
-      position: absolute;
-      bottom: 10px;
-      right: 10px;
-      z-index: 1000;
-      background: white;
-      padding: 8px 12px;
-      border-radius: 6px;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.2);
-      font-size: 14px;
+    #study-link, #contact-info {
+      margin-top: 8px;
+      font-size: 13px;
     }
 
-    #study-link a {
+    #study-link a, #contact-info a {
       text-decoration: none;
       color: #0077cc;
     }
 
-    #study-link a:hover {
+    #study-link a:hover, #contact-info a:hover {
       text-decoration: underline;
     }
   </style>
@@ -53,16 +46,30 @@
   <div id="search-container">
     <input type="text" id="city-search" placeholder="Type a city name" list="city-list" />
     <datalist id="city-list"></datalist>
+
+    <div id="study-link">
+      <a href="https://papers.ssrn.com/sol3/papers.cfm?abstract_id=5262465" target="_blank">
+        Checkout our study using PoliSoy
+      </a>
+    </div>
+
+    <div id="contact-info">
+      Contact: Rodrigo Fagundes Cezar<br>
+      <a href="mailto:rodrigo.cezar@fgv.br">rodrigo.cezar@fgv.br</a>
+    </div>
   </div>
 
   <div id="map"></div>
 
+<<<<<<< HEAD
   <div id="study-link">
     <a href="https://papers.ssrn.com/sol3/papers.cfm?abstract_id=5262465" target="_blank">
       Read our PoliSoy study
     </a>
   </div>
 
+=======
+>>>>>>> 5f1b3b190ceae2e0dd66fa48a9ea1b80a75aa917
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script>
     const map = L.map('map', { zoomControl: false }).setView([-15, -55], 4);

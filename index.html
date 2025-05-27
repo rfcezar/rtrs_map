@@ -42,10 +42,10 @@
       right: 10px;
       z-index: 1000;
       background: white;
-      padding: 8px 10px;
+      padding: 10px 12px;
       border-radius: 6px;
       box-shadow: 0 2px 6px rgba(0,0,0,0.2);
-      width: 220px;
+      width: 250px;
       font-size: 13px;
     }
 
@@ -58,6 +58,11 @@
       width: 100%;
       padding: 3px;
       font-size: 12px;
+      margin-bottom: 10px;
+    }
+
+    #layer-control {
+      font-size: 13px;
     }
 
     a {
@@ -72,9 +77,7 @@
 </head>
 <body>
   <div id="info-container">
-    <p>
-      <strong>About PoliSoy</strong>
-    </p>
+    <p><strong>About PoliSoy</strong></p>
     <p>
       <strong>PoliSoy</strong> (Political Accountability of Soy Business Owners) tracks the political engagement of key asset owners in Brazil’s soy industry, with particular attention to actors certified under sustainability schemes such as RTRS (Roundtable on Responsible Soy). The platform was developed by <a href="mailto:rodrigo.cezar@fgv.br">Rodrigo Fagundes Cezar</a> at FGV by linking public data on RTRS audits, corporate ownership records, and campaign donation disclosures from Brazil’s 2022 elections.
     </p>
@@ -87,6 +90,7 @@
     <h3>Explore the data</h3>
     <input type="text" id="city-search" placeholder="Type a city name" list="city-list" />
     <datalist id="city-list"></datalist>
+    <div id="layer-control"></div>
   </div>
 
   <div id="map"></div>
@@ -194,7 +198,16 @@
           "RTRS audited shareholders": layerRTRS
         };
 
-        L.control.layers(baseMaps, null, { collapsed: false }).addTo(map);
+        const layerControl = L.control.layers(baseMaps, null, { collapsed: false });
+        layerControl.onAdd = function() {
+          const container = L.DomUtil.get("layer-control");
+          L.DomEvent.disableClickPropagation(container);
+          this._initLayout();
+          this._update();
+          return this._container;
+        };
+        layerControl.addTo(map);
+
         layerAll.addTo(map);
         activeLayer = layerAll;
 

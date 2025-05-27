@@ -96,7 +96,6 @@
       return `
         <b>${props.name_muni}</b><br>
         Total donated: R$${(props[`${prefix}_TotalDonated`] || 0).toLocaleString()}<br>
-        Number of donations: ${props[`${prefix}_TotalCount`] || 0}<br>
         <u>Top parties:</u><ul>${list}</ul>
       `;
     }
@@ -126,9 +125,6 @@
             }
           });
 
-          layerAll.addLayer(featureAll);
-          layerRTRS.addLayer(featureRTRS);
-
           if (name) {
             const option = document.createElement("option");
             option.value = name;
@@ -137,10 +133,18 @@
 
           allFeatures.push(featureAll);
           allFeatures.push(featureRTRS);
+
+          layerAll.addLayer(featureAll);
+          layerRTRS.addLayer(featureRTRS);
         });
 
+        const baseLayers = {
+          "All shareholders": layerAll,
+          "RTRS audited": layerRTRS
+        };
+
         layerAll.addTo(map);
-        L.control.layers(null, { "All shareholders": layerAll, "RTRS audited": layerRTRS }, { collapsed: false }).addTo(map);
+        L.control.layers(baseLayers, null, { collapsed: false }).addTo(map);
       });
 
     searchInput.addEventListener('change', function () {

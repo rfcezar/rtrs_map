@@ -2,12 +2,13 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <title>PoliSoy v1.0</title>
+  <title>PoliSoy Dashboard</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <style>
     html, body { margin: 0; padding: 0; height: 100%; font-family: sans-serif; }
     #map { width: 100%; height: 100vh; }
+    .leaflet-popup-content ul { padding-left: 18px; margin: 0; }
 
     #search-container {
       position: absolute;
@@ -50,7 +51,7 @@
 </head>
 <body>
   <div id="search-container">
-    <input type="text" id="city-search" placeholder="Type the name of the city" list="city-list" />
+    <input type="text" id="city-search" placeholder="Type a city name" list="city-list" />
     <datalist id="city-list"></datalist>
   </div>
 
@@ -58,16 +59,13 @@
 
   <div id="study-link">
     <a href="https://papers.ssrn.com/sol3/papers.cfm?abstract_id=5262465" target="_blank">
-      Checkout our study using PoliSoy
+      Read our PoliSoy study
     </a>
   </div>
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script>
-    const map = L.map('map', {
-      zoomControl: false
-    }).setView([-15, -55], 4);
-
+    const map = L.map('map', { zoomControl: false }).setView([-15, -55], 4);
     L.control.zoom({ position: 'bottomleft' }).addTo(map);
 
     L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
@@ -76,64 +74,88 @@
       maxZoom: 19
     }).addTo(map);
 
-    let geojsonLayer;
     const datalist = document.getElementById('city-list');
+    const searchInput = document.getElementById('city-search');
+    const layerAll = L.layerGroup();
+    const layerRTRS = L.layerGroup();
+    let allFeatures = [];
+
+    function getColor(value) {
+      return value > 1000000 ? '#08306b' :
+             value > 500000  ? '#2171b5' :
+             value > 100000  ? '#6baed6' :
+             value > 0       ? '#c6dbef' : '#f0f0f0';
+    }
+
+    function createPopup(props, prefix) {
+      let parties = [];
+      try {
+        parties = JSON.parse(props[`${prefix}_TopParties`] || '[]');
+      } catch (e) {}
+
+      const list = parties.map(p => `<li>${p.name}: R$${p.value.toLocaleString()} (${p.percent}%)</li>`).join('');
+
+      return `
+        <b>${props.name_muni}</b><br>
+        Total donated: R$${(props[`${prefix}_TotalDonated`] || 0).toLocaleString()}<br>
+        Number of donations: ${props[`${prefix}_TotalCount`] || 0}<br>
+        <u>Top parties:</u><ul>${list}</ul>
+      `;
+    }
 
     fetch('muni_map.geojson')
-      .then(response => response.json())
+      .then(res => res.json())
       .then(data => {
-        geojsonLayer = L.geoJSON(data, {
-          onEachFeature: function (feature, layer) {
-            const p = feature.properties;
-            const cityName = p.name_muni?.trim();
-            const popup = `
-              <b>${cityName}</b><br>
-              RTRS Certified Producers: ${p.CertifiedProducers || 0}<br>
-              Donations: R$${p.TotalDonation || 0}<br>
-              Recipients: ${p.Recipients || "None"}<br>
-              Parties: ${p.RecipientParties || "None"}
-            `;
-            layer.bindPopup(popup);
-            layer._cityName = cityName?.toLowerCase();
+        data.features.forEach(f => {
+          const props = f.properties;
+          const name = props.name_muni?.trim();
+          const allVal = props.All_TotalDonated || 0;
+          const rtrsVal = props.RTRS_TotalDonated || 0;
 
-            if (cityName) {
-              const option = document.createElement("option");
-              option.value = cityName;
-              datalist.appendChild(option);
-            }
-          },
-          style: function (feature) {
-            let val = feature.properties.CertifiedProducers;
-            let color = val > 10 ? '#08519c' :
-                        val > 5  ? '#3182bd' :
-                        val > 0  ? '#6baed6' : '#f0f0f0';
-            return {
-              fillColor: color,
-              weight: 0.5,
-              color: 'gray',
-              fillOpacity: 0.7
-            };
+          const featureAll = L.geoJSON(f.geometry, {
+            style: { color: 'gray', weight: 0.5, fillColor: getColor(allVal), fillOpacity: 0.7 }
+          }).bindPopup(createPopup(props, 'All'));
+
+          const featureRTRS = L.geoJSON(f.geometry, {
+            style: { color: 'gray', weight: 0.5, fillColor: getColor(rtrsVal), fillOpacity: 0.7 }
+          }).bindPopup(createPopup(props, 'RTRS'));
+
+          featureAll.eachLayer(l => l._cityName = name?.toLowerCase());
+          featureRTRS.eachLayer(l => l._cityName = name?.toLowerCase());
+
+          layerAll.addLayer(featureAll);
+          layerRTRS.addLayer(featureRTRS);
+
+          if (name) {
+            const option = document.createElement("option");
+            option.value = name;
+            datalist.appendChild(option);
           }
-        }).addTo(map);
+
+          allFeatures.push(featureAll);
+          allFeatures.push(featureRTRS);
+        });
+
+        layerAll.addTo(map);
+        L.control.layers(null, { "All shareholders": layerAll, "RTRS audited": layerRTRS }, { collapsed: false }).addTo(map);
       });
 
-    document.getElementById('city-search').addEventListener('change', function () {
+    searchInput.addEventListener('change', function () {
       const input = this.value.trim().toLowerCase();
-      if (!input || !geojsonLayer) return;
+      if (!input) return;
 
       let found = false;
-      geojsonLayer.eachLayer(function (layer) {
-        if (layer._cityName && layer._cityName === input) {
-          const bounds = layer.getBounds();
-          map.fitBounds(bounds);
-          layer.openPopup();
-          found = true;
-        }
+      allFeatures.forEach(group => {
+        group.eachLayer(layer => {
+          if (layer._cityName === input) {
+            map.fitBounds(layer.getBounds());
+            layer.openPopup();
+            found = true;
+          }
+        });
       });
 
-      if (!found) {
-        alert("City not found. Please check the name.");
-      }
+      if (!found) alert("City not found. Please check the spelling.");
     });
   </script>
 </body>
